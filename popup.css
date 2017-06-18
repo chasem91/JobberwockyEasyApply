@@ -1,0 +1,14 @@
+.easy-input {
+  width: calc(100% - 9px);
+  border: none;
+  padding: 10px;
+  margin-bottom: 20px;
+  text-align: center;
+  background-color: #eee;
+  box-shadow: 1px 1px 3px #bbb;
+  outline: none;
+  font: inherit;
+  font-weight: inherit;
+  font-family: inherit;
+  color: inherit;
+}

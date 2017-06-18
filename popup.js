@@ -1,14 +1,8 @@
 const executeOnAjaxComplete = cb => {
-  $(document).on('DOMNodeInserted', () => {
-    console.log('triggered');
-    $(document).unbind('DOMNodeInserted')
+  $(document).ajaxComplete((e, xhr, options) => {
+    $(e.currentTarget).unbind('ajaxComplete')
     setTimeout(cb, 0)
   })
-  // $(document).ajaxComplete((e, xhr, options) => {
-  //   console.log('triggered');
-  //   $(e.currentTarget).unbind('ajaxComplete')
-  //   setTimeout(cb, 0)
-  // })
 }
 
 const selectCompanyAndSubmit = (companyName, resolve) => {
@@ -24,13 +18,17 @@ const selectCompanyAndSubmit = (companyName, resolve) => {
   const $submitButton = $appForm.find('button')
   $submitButton.attr('disabled', false)
   $submitButton.click()
-  executeOnAjaxComplete(() => resolve())
+  executeOnAjaxComplete(() => {
+    resolve()
+  })
 }
+
+const format = string => string.toLowerCase().replace(/ /g,'')
 
 const fillOutForm = (companyName, resolve) => {
   const $results = $('.search-results')
   const firstResult = $results.children()[0]
-  if (firstResult && firstResult.textContent && companyName.toLowerCase() === firstResult.textContent.toLowerCase()) {
+  if (firstResult && firstResult.textContent && format(companyName) === format(firstResult.textContent)) {
     executeOnAjaxComplete(() => selectCompanyAndSubmit(companyName, resolve))
     firstResult.click()
   } else {
@@ -51,38 +49,52 @@ const createApplication = (companyName, resolve) => {
   executeOnAjaxComplete(() => fillOutForm(companyName, resolve))
 }
 
-const companies = [
-  'FieldVision',
-  'Indie Money',
-  'x.ai',
-]
-
 const singleApply = companyName => {
   return new Promise((resolve, reject) => {
     createApplication(companyName, resolve)
+  }).then(() => {
+    $('.easy-input').focus()
   })
 }
 
-const applyAll = (idx = 0) => {
+const applyAll = (companies, idx = 0) => {
   if (idx !== companies.length) {
     const companyName = companies[idx]
     const p = singleApply(companyName)
     p.then(() => {
       setTimeout(() => {
-        applyAll(idx + 1)
+        applyAll(companies, idx + 1)
       }, 0)
     })
   }
 }
 
-// applyAll()
-// singleApply('x.ai')
-
 const $input = $('<input>')
+$input.attr('placeholder', 'Create Application (Type company name and hit ENTER - separate multiple by commas)')
+$input.addClass('easy-input')
 $input.keypress((event) => {
   if (event.which == 13) {
-    singleApply(event.currentTarget.value)
+    const names = event.currentTarget.value.split(',')
+    applyAll(names)
     event.currentTarget.value = ''
   }
 })
-$('.jobberwocky-content > div').prepend($input)
+
+const insertEasyInput = () => {
+  $('.jobberwocky-content > div').prepend($input)
+}
+
+let currentPage = window.location.href;
+if (currentPage === 'http://progress.appacademy.io/me/jobberwocky/job_applications') {
+  insertEasyInput()
+}
+
+setInterval(() => {
+  if (currentPage != window.location.href) {
+    currentPage = window.location.href;
+
+    if (currentPage === 'http://progress.appacademy.io/me/jobberwocky/job_applications') {
+      insertEasyInput()
+    }
+  }
+}, 200)
